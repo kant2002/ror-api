@@ -8,12 +8,15 @@ from elasticsearch import TransportError
 
 
 def get_nested_names(org):
-    yield org['name']
-    for label in org['labels']:
-        yield label['label']
-    for alias in org['aliases']:
+    labels = org.get('labels',"")
+    aliases = org.get('aliases',"")
+    acronyms = org.get('acronyms',"")
+    yield org.get('name',"")
+    for label in labels:
+        yield label
+    for alias in aliases:
         yield alias
-    for acronym in org['acronyms']:
+    for acronym in acronyms:
         yield acronym
 
 
@@ -28,6 +31,15 @@ def get_nested_ids(org):
             for eid in ext_id['all']:
                 yield eid
 
+def get_nested_ids2(org):
+    yield org['id']
+    yield re.sub('https://', '', org['id'])
+    yield re.sub('https://ror.org/', '', org['id'])
+    for ext_name, ext_id in org['external_ids'].items():
+        if ext_name == 'GRID':
+            yield ext_id['all']
+        else:
+            yield ext_id
 
 class Command(BaseCommand):
     help = 'Indexes ROR dataset'
@@ -63,12 +75,13 @@ class Command(BaseCommand):
                             '_id': org['id']
                         }
                     })
+                    print("Processing: ",org)
                     org['names_ids'] = [{
                         'name': n
                     } for n in get_nested_names(org)]
                     org['names_ids'] += [{
                         'id': n
-                    } for n in get_nested_ids(org)]
+                    } for n in get_nested_ids2(org)]
                     body.append(org)
                 ES.bulk(body)
         except TransportError:

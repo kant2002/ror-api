@@ -21,8 +21,7 @@ def generate_ror_id():
     checksum = str(98 - ((n * 100) % 97)).zfill(2)
     return '{}0{}{}'.format(ROR_API['ID_PREFIX'], n_encoded, checksum)
 
-
-def get_ror_id(grid_id, es):
+def ror_exists(grid_id, es):
     """Maps GRID ID to ROR ID.
 
     If given GRID ID was indexed previously, corresponding ROR ID is obtained
@@ -30,19 +29,18 @@ def get_ror_id(grid_id, es):
     """
 
     s = ES.search(ES_VARS['INDEX'],
-                  body={'query': {
-                      'term': {
-                          'external_ids.GRID.all': grid_id
-                      }
-                  }})
+              body={'query': {
+                  'term': {
+                      'external_ids.GRID.all': grid_id
+                  }
+              }})
     if s['hits']['total'] == 1:
         return s['hits']['hits'][0]['_id']
-    return generate_ror_id()
 
+def get_ror_id(grid_id, es):
+    return ror_exists(grid_id, es) if ror_exists(grid_id, es) else generate_ror_id()
 
-def convert_organization(grid_org, es):
-    """Converts the organization metadata from GRID schema to ROR schema."""
-
+def active_record (grid_org,es):
     return {
         'id':
         get_ror_id(grid_org['id'], ES),
@@ -61,19 +59,65 @@ def convert_organization(grid_org, es):
         'wikipedia_url':
         grid_org['wikipedia_url'],
         'labels':
-        grid_org['labels'],
+        grid_org.get('labels',[]),
         'country': {
             'country_code': grid_org['addresses'][0]['country_code'],
             'country_name': grid_org['addresses'][0]['country']
-        },
+            },
+            'external_ids':
+            getExternalIds(
+            dict(grid_org.get('external_ids', {}),
+                GRID={
+                    'preferred': grid_org['id'],
+                    'all': grid_org['id']
+                    }))
+        }
+
+def obsolete_record(grid_org, es):
+    return {
+        'id':
+        ror_exists(grid_org['id'],es) if ror_exists(grid_org['id'],es) else grid_org['id'],
+        'status':'obsolete',
+        'name': '',
         'external_ids':
         getExternalIds(
-            dict(grid_org.get('external_ids', {}),
-                 GRID={
-                     'preferred': grid_org['id'],
-                     'all': grid_org['id']
-                 }))
+        dict(grid_org.get('external_ids', {}),
+            GRID={
+                'preferred': grid_org['id'],
+                'all': grid_org['id']
+                }))
     }
+def redirect_record(grid_org, es, active_data):
+    # get ROR id of the item this is redirecting to
+    # using the hash instead of querying again because it is unknown whether the organization
+    # being redirected to is already present in ES or is a new organization about to be indexed
+
+    #adding grid_redirect key in case the historical organization being redirected to, doesn't exist later
+    redirect_id = next(item for item in active_data if item['external_ids']['GRID']['preferred'] == grid_org['redirect'])['id']
+    return {
+        'id':
+        ror_exists(grid_org['id'],es) if ror_exists(grid_org['id'],es) else grid_org['id'],
+        'name':"",
+        'status':'redirected',
+        'redirect_to':redirect_id,
+        'grid_id_redirect': grid_org['redirect'],
+        'external_ids':
+        getExternalIds(
+        dict(grid_org.get('external_ids', {}),
+            GRID={
+                'preferred': grid_org['id'],
+                'all': grid_org['id']
+                }))
+    }
+
+def convert_organization(grid_org, es, active_data = None):
+    """Converts the organization metadata from GRID schema to ROR schema."""
+    if grid_org['status'] == 'active':
+        return active_record(grid_org,es)
+    elif grid_org['status'] == 'obsolete':
+        return obsolete_record(grid_org,es)
+    elif grid_org['status'] == 'redirected':
+       return redirect_record(grid_org, es, active_data)
 
 
 def getExternalIds(external_ids):
@@ -97,10 +141,15 @@ class Command(BaseCommand):
                 grid_data = json.load(it)
 
             self.stdout.write('Converting GRID dataset to ROR schema')
-            ror_data = [
+            active_ror_data = [
                 convert_organization(org, ES)
                 for org in grid_data['institutes'] if org['status'] == 'active'
             ]
+            inactive_ror_data = [
+                convert_organization(org, ES, active_ror_data)
+                for org in grid_data['institutes'] if org['status'] != 'active'
+            ]
+            ror_data = active_ror_data + inactive_ror_data
             with open(ROR_DUMP['ROR_JSON_PATH'], 'w') as outfile:
                 json.dump(ror_data, outfile, indent=4)
             self.stdout.write('ROR dataset created')
