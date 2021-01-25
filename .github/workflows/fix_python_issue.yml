@@ -44,8 +44,8 @@ jobs:
           python manage.py setup
       - name: Test
         env:
-            ELASTIC_HOST: "http://localhost"
-            ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
+          ELASTIC_HOST: "http://localhost"
+          ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
           ROR_BASE_URL: "http://localhost"
         run: |
           curl  "$ELASTIC_HOST:$ELASTIC_PORT/_cat/health?h=status"
