@@ -2,7 +2,7 @@ name: Deploy Dev
 on:
   push:
     branches:
-      - "dev"
+      - "fix_python_issue"
 jobs:
   test:
     runs-on: ubuntu-latest
