@@ -40,9 +40,9 @@ jobs:
           pip install yapf
 
           python manage.py collectstatic --noinput
-          python manage.py runserver 0.0.0.0:8000
           python manage.py upgrade
           python manage.py setup
+          python manage.py runserver 0.0.0.0:8000
       - name: Test
         env:
           ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
