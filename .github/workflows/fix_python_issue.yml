@@ -42,11 +42,11 @@ jobs:
           python manage.py collectstatic --noinput
           python manage.py upgrade
           python manage.py setup
-          python manage.py runserver 0.0.0.0:8000
+          curl "http://localhost"
       - name: Test
         env:
           ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
-          ROR_BASE_URL: "http://localhost:8000"
+          ROR_BASE_URL: "http://localhost"
         run: |
           curl  "$ROR_BASE_URL/heartbeat"
           # curl  "http://localhost:$ELASTIC_PORT/_cat/indices"
