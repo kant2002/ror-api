@@ -9,7 +9,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run docker-compose stack
-        run: docker-compose -f docker-compose.yml up -d
+        run: |
+          touch .env
+          docker-compose -f docker-compose.yml up -d
       - name: Check folder
         run: pwd
       - name: Check files
