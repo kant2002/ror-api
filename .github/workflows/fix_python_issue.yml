@@ -12,5 +12,7 @@ jobs:
         run: |
           touch .env
           docker-compose -f docker-compose.yml up -d
+          docker-compose exec python manage.py upgrade
+          docker-compose exec python manage.py setup
       - name: Test
-        run: curl "http://localhost:9292"
+        run: docker-compose exec web python manage.py test rorapi.tests
