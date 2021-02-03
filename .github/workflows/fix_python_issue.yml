@@ -39,20 +39,25 @@ jobs:
           pip install wheel
           pip install -r requirements.txt
           pip install yapf
-          pip install gunicorn
           python manage.py collectstatic --noinput
           python manage.py upgrade
           python manage.py setup
-      - name: Start
-        run: gunicorn rorapi.wsgi:application --bind 0.0.0.0:80
+      - name: Buildah Action
+        uses: redhat-actions/buildah-build@v1
+        with:
+          image: test-ror-api
+          tags: ${{ github.sha }}
+          dockerfiles: |
+            ./Dockerfile
       - name: Test
         env:
           ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
           ROR_BASE_URL: "http://localhost"
         run: |
-          python manage.py test rorapi.tests
-          # python manage.py test rorapi.tests_integration
-          # python manage.py test rorapi.tests_functional
+          docker image ls
+          #python manage.py test rorapi.tests
+          # python manage.py test #rorapi.tests_integration
+          # python manage.py test #rorapi.tests_functional
           # echo $?
       # - name: Publish code coverage
       #   uses: paambaati/codeclimate-action@v2.7.5
