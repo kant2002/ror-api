@@ -54,9 +54,14 @@ jobs:
       - name: Test
         env:
           ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
+          ELASTIC_HOST: localhost
           ROR_BASE_URL: "http://localhost"
+          ELASTIC_PASSWORD: changeme
         run: |
-          docker image inspect test-ror-api:latest
+          docker run --rm -d -e ELASTIC_HOST -e ROR_BASE_URL -e ELASTIC_PORT -e ELASTIC_PASSWORD -p 80:80 test-ror-api:latest
+          curl "$ROR_BASE_URL"
+          curl "$ROR_BASE_URL/organizations"
+          #docker image inspect test-ror-api:latest
           #python manage.py test rorapi.tests
           # python manage.py test #rorapi.tests_integration
           # python manage.py test #rorapi.tests_functional
