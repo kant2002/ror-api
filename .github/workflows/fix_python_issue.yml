@@ -61,10 +61,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          docker run --rm -d -e ELASTIC_HOST='elasticsearch' -e ROR_BASE_URL -e ELASTIC_PASSWORD -e ELASTIC_PORT='9200' -p 80:80 test-ror-api:latest
-          export container_id=`docker ps -a | grep 'test-ror-api' | cut -f1 -d" "`
-          docker exec $container_id /bin/bash -c 'curl localhost'
-          docker inspect $container_id
+          docker ps -a
+          #docker run --rm -d -e ELASTIC_HOST='elasticsearch' -e ROR_BASE_URL -e ELASTIC_PASSWORD -e ELASTIC_PORT='9200' -p 80:80 test-ror-api:latest
+          #export container_id=`docker ps -a | grep 'test-ror-api' | cut -f1 -d" "`
+          #docker exec $container_id /bin/bash -c 'curl localhost'
+          #docker inspect $container_id
           #python manage.py test rorapi.tests
           # python manage.py test #rorapi.tests_integration
           # python manage.py test #rorapi.tests_functional
