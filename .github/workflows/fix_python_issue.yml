@@ -64,7 +64,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          curl $ROR_BASE_URL
+          curl "$ROR_BASE_URL/organizations"
           curl $ELASTIC_HOST:$ELASTIC_PORT
           #python manage.py test rorapi.tests
           # python manage.py test #rorapi.tests_integration
