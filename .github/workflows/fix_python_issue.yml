@@ -15,8 +15,6 @@ jobs:
         ROR_BASE_URL: http://localhost
       ports:
         - 80
-      volumes:
-        - ./rorapi:/home/app/webapp/rorapi
     #env:
       #ELASTIC_HOST: "localhost"
       #ELASTIC_PASSWORD: "changeme"
