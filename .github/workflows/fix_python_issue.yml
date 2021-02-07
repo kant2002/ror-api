@@ -6,7 +6,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: rorcommunity/ror-api:githubaction
+    container:
+      image: rorcommunity/ror-api:githubaction
+      env:
+        ELASTIC_HOST: elasticsearch
+        ELASTIC_PORT: 9200
+        ELASTIC_PASSWORD: changeme
+        ROR_BASE_URL: http://localhost
+      ports:
+        - 80
+      volumes:
+        - ./rorapi:/home/app/webapp/rorapi
     #env:
       #ELASTIC_HOST: "localhost"
       #ELASTIC_PASSWORD: "changeme"
