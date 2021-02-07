@@ -6,7 +6,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container: ubuntu
     services:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
@@ -18,17 +17,20 @@ jobs:
           http.cors.enabled: "true"
           http.cors.allow-origin: "*"
         ports:
-          - 9200
-          - 9300
+          - 9200:9200
+          - 9300:9300
       rorapi:
         image: rorcommunity/ror-api:githubaction
         env:
-          ELASTIC_HOST: elasticsearch
+          ELASTIC_HOST: localhost
           ELASTIC_PORT: 9200
           ELASTIC_PASSWORD: changeme
           ROR_BASE_URL: http://localhost
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         ports:
-          - 80
+          - 80:80
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.x
@@ -49,14 +51,15 @@ jobs:
       - name: Test
         env:
           ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
-          ELASTIC_HOST: elasticsearch
-          ROR_BASE_URL: "http://rorapi"
+          ELASTIC_HOST: localhost
+          ROR_BASE_URL: "http://localhost"
           ELASTIC_PASSWORD: changeme
-          #AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          #AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          #AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          curl rorapi
+          docker ps -a
+          curl "$ROR_BASE_URL"
           curl "$ELASTIC_HOST:$ELASTIC_PORT"
           #python manage.py test rorapi.tests
           # python manage.py test #rorapi.tests_integration
