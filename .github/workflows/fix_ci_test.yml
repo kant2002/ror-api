@@ -50,4 +50,5 @@ jobs:
       - name: Install requirements
         run: |
           docker --version
-          docker ps -a
+          rorapi=`docker ps --filter "ancestor=rorcommunity/ror-api:1.3.3`
+          docker exec $rorapi python manage.py createindex
