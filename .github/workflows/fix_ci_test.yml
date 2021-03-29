@@ -29,7 +29,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: rorcommunity/ror-api:${{ github.ref }}
+          tags: rorcommunity/ror-api:${{ github.sha }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
   test:
@@ -54,7 +54,7 @@ jobs:
         ports:
           - 9200:9200
       rorapi:
-        image: rorcommunity/ror-api:${{ github.ref }}
+        image: rorcommunity/ror-api:${{ github.sha }}
         env:
           ELASTIC_HOST: elasticsearch
           ELASTIC_PORT: 9200
