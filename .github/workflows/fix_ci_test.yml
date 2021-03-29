@@ -30,8 +30,8 @@ jobs:
     steps:
       - name: Connect to elasticsearch
         run: |
-          python manage.py createindex
           curl http://elasticsearch:9200
+          ls .
         # Environment variable used by the `client.js` script to create a new Redis client.
         env:
           # The hostname used to communicate with the elasticsearch service container
