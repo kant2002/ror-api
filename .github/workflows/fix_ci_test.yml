@@ -1,0 +1,41 @@
+name: Deploy Dev
+on:
+  push:
+    branches:
+      - "fix_ci_tests"
+jobs:
+  # Label of the container job
+  container-job:
+    # Containers must run in Linux based operating systems
+    runs-on: ubuntu-latest
+    # Docker Hub image that `container-job` executes in
+    container: rorcommunity/ror-api:1.3.3
+
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      elasticsearch:
+        # Docker Hub image
+        image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+        # Set health checks to wait until redis has started
+        env:
+          discovery.type: single-node
+          ES_JAVA_OPTS: -Xms512m -Xmx512m
+          ELASTIC_PASSWORD: changeme
+          xpack.security.enabled: "false"
+          http.cors.enabled: "true"
+          http.cors.allow-origin: "*"
+        ports:
+          -9200:9200
+          -9300:9300
+      steps:
+        -name: Connect to elasticsearch
+        env:
+          ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
+          ELASTIC_HOST: elasticsearch
+          ELASTIC_PASSWORD: changeme
+          ROR_BASE_URL: http://localhost
+        run: |
+          python --version
+          curl http://elasticsearch:9200
+          curl http://localhost
