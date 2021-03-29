@@ -28,14 +28,14 @@ jobs:
         ports:
           -9200:9200
           -9300:9300
-      steps:
-        -name: Connect to elasticsearch
-        env:
-          ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
-          ELASTIC_HOST: elasticsearch
-          ELASTIC_PASSWORD: changeme
+    steps:
+      -name: Connect to elasticsearch
+      env:
+        ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
+        ELASTIC_HOST: elasticsearch
+        ELASTIC_PASSWORD: changeme
           ROR_BASE_URL: http://localhost
-        run: |
-          python --version
-          curl http://elasticsearch:9200
-          curl http://localhost
+      run: |
+        python --version
+        curl http://elasticsearch:9200
+        curl http://localhost
