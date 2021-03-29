@@ -34,7 +34,7 @@ jobs:
         ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
         ELASTIC_HOST: elasticsearch
         ELASTIC_PASSWORD: changeme
-          ROR_BASE_URL: http://localhost
+        ROR_BASE_URL: http://localhost
       run: |
         python --version
         curl http://elasticsearch:9200
