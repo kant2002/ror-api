@@ -4,7 +4,36 @@ on:
     branches:
       - "fix_ci_tests"
 jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: rorcommunity/ror-api:${{ github.ref }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
   test:
+    needs: docker
     runs-on: ubuntu-latest
     env:
       ELASTIC_HOST: "localhost"
@@ -25,7 +54,7 @@ jobs:
         ports:
           - 9200:9200
       rorapi:
-        image: rorcommunity/ror-api:1.3.3
+        image: rorcommunity/ror-api:${{ github.ref }}
         env:
           ELASTIC_HOST: elasticsearch
           ELASTIC_PORT: 9200
@@ -50,10 +79,9 @@ jobs:
           python-version: "3.8"
       - name: Run tests in docker container
         run: |
-          docker --version
           rorapi=`docker ps --format "{{.Names}}" | grep ror`
           echo $rorapi
           docker exec $rorapi python manage.py setup
           docker exec $rorapi python manage.py test rorapi.tests
           docker exec $rorapi python manage.py test rorapi.tests_integration
-          #docker exec $rorapi python manage.py test rorapi.tests_functional
+          docker exec $rorapi python manage.py test rorapi.tests_functional
