@@ -24,6 +24,15 @@ jobs:
           http.cors.allow-origin: "*"
         ports:
           - 9200:9200
+      rorapi:
+        image: rorcommunity/ror-api:1.3.3
+        env:
+          ELASTIC_HOST: elasticsearch
+          ELASTIC_PORT: 9200
+          ELASTIC_PASSWORD: changeme
+          ROR_BASE_URL: http://localhost
+        ports:
+          - 9292:80
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -41,17 +50,4 @@ jobs:
       - name: Install requirements
         run: |
           docker --version
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install yapf
-
-          python manage.py collectstatic --noinput
-      - name: Setup
-        run: |
-          python manage.py setup
-      - name: Test
-        run: |
-          python manage.py test rorapi.tests
-          # TODO fix these tests running in GitHub Action
-          # python manage.py test rorapi.tests_integration
-          # python manage.py test rorapi.tests_functional
+          docker ps -a
