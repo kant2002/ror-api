@@ -1,21 +1,20 @@
-name: Redis container example
-on: push
-
+name: Deploy ci
+on:
+  push:
+    branches:
+      - "fix_ci_tests"
 jobs:
-  # Label of the container job
-  container-job:
-    # Containers must run in Linux based operating systems
+  test:
     runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
-    container: rorcommunity/ror-api:1.3.3
-
-    # Service containers to run with `container-job`
+    env:
+      ELASTIC_HOST: "localhost"
+      ELASTIC_PASSWORD: "changeme"
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
     services:
-      # Label used to access the service container
       elasticsearch:
-        # Docker Hub image
         image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
-        # Set health checks to wait until redis has started
         env:
           discovery.type: single-node
           ES_JAVA_OPTS: -Xms512m -Xmx512m
@@ -25,16 +24,34 @@ jobs:
           http.cors.allow-origin: "*"
         ports:
           - 9200:9200
-          - 9300:9300
-
     steps:
-      - name: Connect to elasticsearch
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Cache dependency
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+      - name: Install requirements
         run: |
-          curl http://elasticsearch:9200
-          ls .
-        # Environment variable used by the `client.js` script to create a new Redis client.
-        env:
-          # The hostname used to communicate with the elasticsearch service container
-          ELASTIC_HOST: elasticsearch
-          # The default elasticsearch port
-          ELASTIC_PORT: 9200
+          docker --version
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install yapf
+
+          python manage.py collectstatic --noinput
+      - name: Setup
+        run: |
+          python manage.py setup
+      - name: Test
+        run: |
+          python manage.py test rorapi.tests
+          # TODO fix these tests running in GitHub Action
+          # python manage.py test rorapi.tests_integration
+          # python manage.py test rorapi.tests_functional
