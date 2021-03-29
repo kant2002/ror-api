@@ -1,8 +1,6 @@
-name: Deploy Dev
-on:
-  push:
-    branches:
-      - "fix_ci_tests"
+name: Redis container example
+on: push
+
 jobs:
   # Label of the container job
   container-job:
@@ -28,14 +26,15 @@ jobs:
         ports:
           -9200:9200
           -9300:9300
+
     steps:
-      -name: Connect to elasticsearch
-      env:
-        ELASTIC_PORT: ${{ job.services.elasticsearch.ports[9200] }}
-        ELASTIC_HOST: elasticsearch
-        ELASTIC_PASSWORD: changeme
-        ROR_BASE_URL: http://localhost
-      run: |
-        python --version
-        curl http://elasticsearch:9200
-        curl http://localhost
+      - name: Connect to elasticsearch
+        run: |
+          python manage.py createindex
+          curl http://elasticsearch:9200
+        # Environment variable used by the `client.js` script to create a new Redis client.
+        env:
+          # The hostname used to communicate with the elasticsearch service container
+          ELASTIC_HOST: elasticsearch
+          # The default elasticsearch port
+          ELASTIC_PORT: 9200
