@@ -53,4 +53,4 @@ jobs:
           docker --version
           rorapi=`docker ps --format "{{.Names}}" | grep ror`
           echo $rorapi
-          docker exec $rorapi ls
+          docker exec $rorapi python manage.py setup
