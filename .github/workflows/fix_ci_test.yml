@@ -24,8 +24,8 @@ jobs:
           http.cors.enabled: "true"
           http.cors.allow-origin: "*"
         ports:
-          -9200:9200
-          -9300:9300
+          - 9200:9200
+          - 9300:9300
 
     steps:
       - name: Connect to elasticsearch
