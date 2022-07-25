@@ -59,7 +59,7 @@ Used in the data deployment process managed in [ror-records](https://github.com/
 
 ## Manual/local indexing from S3
 
-1. Create a .env file with values for DATA_STORE, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+1. Make sure you have .env file in the root of your local `ror-api` repo with values for GITHUB_TOKEN, DATA_STORE, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 2. In the project directory, run docker-compose to start all services:
 
         docker-compose up -d
@@ -74,7 +74,7 @@ Used in the data deployment process managed in [ror-records](https://github.com/
 
 5. Index files for new/updated records from a directory in an S3 bucket
 
-Through the route:
+Through the protected API route:
 
         curl -H "Token: <<token value>>" -H "Route-User: <<value>>" http://localhost:9292/indexdata/<<directory in S3 bucket>>
 
@@ -90,11 +90,19 @@ Not used as part of the normal data deployment process. Used when developing loc
 
 To delete the existing index, create a new index and index a data dump:
 
-**LOCALHOST:** Run
+**LOCALHOST:**
+1. Make sure you have .env file in the root of your local `ror-api` repo with a value for GITHUB_TOKEN
+2. In the project directory, run docker-compose to start all services:
+
+        docker-compose up -d
+
+3. Index a specified ROR dataset from https://github.com/ror-community/ror-data
 
           docker-compose exec web python manage.py setup v1.0-2022-03-17-ror-data
 
-**DEV/STAGING/PROD:** Access the running ror-api container and run:
+**DEV/STAGING/PROD:**
+1. Access the running ror-api container (see Bastion host instructions in credential manager)
+2. Index a specified ROR dataset from https://github.com/ror-community/ror-data
 
          python manage.py setup v1.0-2022-03-17-ror-data
 
