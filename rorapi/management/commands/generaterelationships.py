@@ -11,6 +11,7 @@ ERROR_LOG = "relationship_errors.log"
 logging.basicConfig(filename=ERROR_LOG,level=logging.ERROR, filemode='w')
 API_URL = "http://api.ror.org/organizations/"
 UPDATED_RECORDS_PATH = "updates/"
+INVERSE_TYPES = ('Parent', 'Child', 'Related')
 
 def get_relationships_from_file(file):
     print("PROCESSING CSV")
@@ -81,7 +82,7 @@ def download_records(relationships):
         os.makedirs(UPDATED_RECORDS_PATH)
     # download all records that are labeled as in production
     for r in relationships:
-        if (r['related_location'] == "Production"):
+        if r['related_location'] == "Production" and r['record_relationship'] in INVERSE_TYPES:
             filename = r['short_related_id'] + ".json"
             if not(check_file(filename)):
                 get_record(r['short_related_id'], filename)
