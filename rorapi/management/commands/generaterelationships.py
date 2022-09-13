@@ -12,7 +12,7 @@ logging.basicConfig(filename=ERROR_LOG,level=logging.ERROR, filemode='w')
 API_URL = "http://api.ror.org/organizations/"
 UPDATED_RECORDS_PATH = "updates/"
 
-def read_relshp(file):
+def get_relationships_from_file(file):
     print("PROCESSING CSV")
     relation = []
     rel_dict = {}
@@ -74,13 +74,13 @@ def get_record(id, filename):
     except Exception as e:
         logging.error(f"Writing {filename}: {e}")
 
-def download_record(records):
+def download_records(relationships):
     print("DOWNLOADING PRODUCTION RECORDS")
     downloaded_records_count = 0
     if not os.path.exists(UPDATED_RECORDS_PATH):
         os.makedirs(UPDATED_RECORDS_PATH)
     # download all records that are labeled as in production
-    for r in records:
+    for r in relationships:
         if (r['related_location'] == "Production"):
             filename = r['short_related_id'] + ".json"
             if not(check_file(filename)):
@@ -88,32 +88,32 @@ def download_record(records):
                 downloaded_records_count += 1
     print(str(downloaded_records_count) + " records downloaded")
 
-def remove_bad_records(records, bad_records):
-    updated_records = [r for r in records if not(r['short_record_id'] in bad_records or r['short_related_id'] in bad_records)]
-    print (str(len(bad_records)) + " bad records removed")
-    return updated_records
+def remove_missing_files(relationships, missing_files):
+    updated_relationships = [r for r in relationships if not(r['short_record_id'] in missing_files or r['short_related_id'] in missing_files)]
+    print (str(len(missing_files)) + " missing records removed")
+    return updated_relationships
 
-def check_record_files(records):
+def check_missing_files(relationships):
     print ("CHECKING FOR MISSING RECORDS")
-    bad_records = []
-    for r in records:
+    missing_files = []
+    for r in relationships:
         filename = r['short_record_id'] + ".json"
         if not check_file(filename):
-            bad_records.append(r['short_record_id'])
+            missing_files.append(r['short_record_id'])
             logging.error(f"Record: {r['record_id']} will not be processed because {filename} does not exist.")
 
-    for i in range(len(records)):
-        if records[i]['short_related_id'] in bad_records:
-            logging.error(f"Record {records[i]['short_record_id']} will not contain a relationship for {records[i]['short_related_id']} because {records[i]['short_related_id']}.json does not exist")
+    for i in range(len(relationships)):
+        if relationships[i]['short_related_id'] in missing_files:
+            logging.error(f"Record {relationships[i]['short_record_id']} will not contain a relationship for {relationships[i]['short_related_id']} because {relationships[i]['short_related_id']}.json does not exist")
 
-    if len(bad_records) > 0:
+    if len(missing_files) > 0:
         #remove dupes
-        bad_records = list(dict.fromkeys(bad_records))
-        records = remove_bad_records(records, bad_records)
-    return records
+        missing_files = list(dict.fromkeys(missing_files))
+        relationships = remove_missing_files(relationships, missing_files)
+    return relationships
 
-def check_relationship(former_relationship, current_relationship_id):
-    return [r for r in former_relationship if not(r['id'] == current_relationship_id)]
+def check_relationship(former_relationship, current_relationship_id, current_relationship_type):
+    return [r for r in former_relationship if (not (r['id'] == current_relationship_id) and not (r['type'] == current_relationship_type))]
 
 def get_related_name(related_id):
     filename = related_id + ".json"
@@ -127,40 +127,40 @@ def get_related_name(related_id):
         logging.error(f"Reading {filepath}: {e}")
     return name
 
-def process_one_record(record):
-    filename = record['short_record_id'] + ".json"
+def process_one_relationship(relationship):
+    filename = relationship['short_record_id'] + ".json"
     filepath = check_file(filename)
-    relationship = {
-        "label": get_related_name(record['short_related_id']),
-        "type": record['record_relationship'],
-        "id": record['related_id']
+    relationship_data = {
+        "label": get_related_name(relationship['short_related_id']),
+        "type": relationship['record_relationship'],
+        "id": relationship['related_id']
     }
     try:
         with open(filepath, 'r+') as f:
             file_data = json.load(f)
-            file_data['relationships'] = check_relationship(file_data['relationships'], record['related_id'])
-            file_data['relationships'].append(relationship.copy())
+            file_data['relationships'] = check_relationship(file_data['relationships'], relationship['related_id'], relationship['record_relationship'])
+            file_data['relationships'].append(relationship_data.copy())
             f.seek(0)
             json.dump(file_data, f, ensure_ascii=False, indent=2)
             f.truncate()
     except Exception as e:
         logging.error(f"Writing {filepath}: {e}")
 
-def process_records(records):
+def process_relationships(relationships):
     print("UPDATING RECORDS")
-    processed_records_count = 0
-    for r in records:
-        process_one_record(r)
-        processed_records_count += 1
-    print(str(processed_records_count) + " records updated")
+    processed_relationships_count = 0
+    for r in relationships:
+        process_one_relationship(r)
+        processed_relationships_count += 1
+    print(str(processed_relationships_count) + " relationships updated")
 
 def generate_relationships(file):
     if check_file(file):
-        rel = read_relshp(file)
-        if rel:
-            download_record(rel)
-            updated_recs = check_record_files(rel)
-            process_records(updated_recs)
+        relationships = get_relationships_from_file(file)
+        if relationships:
+            download_records(relationships)
+            relationships_missing_files_removed = check_missing_files(relationships)
+            process_relationships(relationships_missing_files_removed)
         else:
             logging.error(f"No relationships found in {file}")
     else:
